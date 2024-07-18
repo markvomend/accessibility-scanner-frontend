@@ -235,7 +235,7 @@
                         progressText.textContent = `${progress}%`;
                     }, 500);
 
-                    fetch(`http://localhost:3000/scan?url=${encodeURIComponent(url)}`)
+                    fetch(`https://accessibility-scanner-backend.onrender.com/scan?url=${encodeURIComponent(url)}`)
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
