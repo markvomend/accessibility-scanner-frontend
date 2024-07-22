@@ -22,9 +22,18 @@
             </div>
         </form>
 
-        <div id="loading" class="hidden text-center">
-            <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p class="mt-4 text-lg">Scanning in progress...</p>
+        <div id="loading" class="hidden">
+            <div class="mb-4 text-center">
+                <p class="text-lg font-semibold mb-2">Scanning in progress...</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="progress-steps" class="flex justify-between text-xs text-gray-600">
+                <span>Initializing</span>
+                <span>Analyzing</span>
+                <span>Finalizing</span>
+            </div>
         </div>
 
         <div id="results" class="bg-white rounded-lg shadow-md p-6 space-y-4 hidden">
@@ -61,10 +70,15 @@
         const loadingDiv = document.getElementById('loading');
         const resultsDiv = document.getElementById('results');
         const issuesList = document.getElementById('issuesList');
+        const progressBar = document.getElementById('progress-bar');
 
         loadingDiv.classList.remove('hidden');
         resultsDiv.classList.add('hidden');
         issuesList.innerHTML = '';
+
+        // Reset and start the progress bar animation
+        progressBar.style.width = '0%';
+        const progressInterval = animateProgressBar();
 
         try {
             const response = await fetch(`${BACKEND_URL}/scan?url=${encodeURIComponent(url)}&t=${Date.now()}`, {
@@ -74,15 +88,34 @@
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            await new Promise(resolve => setTimeout(resolve, 500)); // Pause to show completed progress
             displayResults(data);
         } catch (error) {
             console.error('Scan error:', error);
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            await new Promise(resolve => setTimeout(resolve, 500)); // Pause to show completed progress
             issuesList.innerHTML = `<li class="text-red-500">An error occurred: ${error.message}. Please try again or contact support if the issue persists.</li>`;
         } finally {
             loadingDiv.classList.add('hidden');
             resultsDiv.classList.remove('hidden');
         }
     });
+
+    function animateProgressBar() {
+        const progressBar = document.getElementById('progress-bar');
+        let width = 0;
+        return setInterval(() => {
+            if (width >= 90) {
+                clearInterval(progressInterval);
+            } else {
+                width += Math.random() * 3;
+                progressBar.style.width = Math.min(width, 90) + '%';
+            }
+        }, 200);
+    }
 
     function displayResults(data) {
         document.getElementById('reportTitle').textContent = `Accessibility report for ${data.pageUrl}`;
