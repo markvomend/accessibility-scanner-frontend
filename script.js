@@ -14,6 +14,9 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
 
     try {
         const response = await fetch(`${BACKEND_URL}/scan?url=${encodeURIComponent(url)}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         loadingDiv.classList.add('hidden');
 
@@ -29,18 +32,20 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
             } else {
                 renderIssues(data.issues);
                 setupToggleListeners(data.issues);
+                updateIssueCounts(data.issues);
             }
         }
     } catch (error) {
         loadingDiv.classList.add('hidden');
-        issuesList.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}</p>`;
+        issuesList.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please try again or contact support if the issue persists.</p>`;
+        console.error('Scan error:', error);
     }
 });
 
 function renderIssues(issues) {
     const issuesList = document.getElementById('issues-list');
     issuesList.innerHTML = issues.map((issue, index) => `
-        <li class="bg-gray-50 p-4 rounded-md" data-type="${issue.type}">
+        <li class="bg-gray-50 p-4 rounded-md mb-4" data-type="${issue.type}">
             <h4 class="font-semibold">${index + 1}. ${issue.type.toUpperCase()}: ${issue.code}</h4>
             <p class="mt-2">${issue.message}</p>
             ${issue.context ? `<pre class="bg-gray-100 p-2 mt-2 overflow-x-auto text-sm"><code>${escapeHtml(issue.context)}</code></pre>` : ''}
@@ -54,10 +59,32 @@ function setupToggleListeners(issues) {
     toggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
             const type = toggle.getAttribute('data-type');
-            const filteredIssues = issues.filter(issue => issue.type === type);
-            renderIssues(filteredIssues);
+            toggles.forEach(t => t.classList.remove('bg-opacity-100'));
+            toggle.classList.add('bg-opacity-100');
+            
+            if (type === 'all') {
+                renderIssues(issues);
+            } else {
+                const filteredIssues = issues.filter(issue => issue.type === type);
+                renderIssues(filteredIssues);
+            }
         });
     });
+}
+
+function updateIssueCounts(issues) {
+    const counts = {
+        error: issues.filter(i => i.type === 'error').length,
+        warning: issues.filter(i => i.type === 'warning').length,
+        notice: issues.filter(i => i.type === 'notice').length
+    };
+
+    document.querySelector('[data-type="error"]').textContent = `Errors (${counts.error})`;
+    document.querySelector('[data-type="warning"]').textContent = `Warnings (${counts.warning})`;
+    document.querySelector('[data-type="notice"]').textContent = `Notices (${counts.notice})`;
+    
+    const totalIssues = counts.error + counts.warning + counts.notice;
+    document.querySelector('[data-type="all"]').textContent = `All Issues (${totalIssues})`;
 }
 
 function escapeHtml(unsafe) {
