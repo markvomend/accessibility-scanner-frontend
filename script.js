@@ -1,4 +1,3 @@
-// Replace this with the actual URL of your backend server
 const BACKEND_URL = 'https://accessibility-scanner-backend.onrender.com';
 
 document.getElementById('scan-form').addEventListener('submit', async (e) => {
@@ -18,22 +17,27 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
         if (data.error) {
             resultsDiv.innerHTML = `<p class="text-red-500">${data.error}</p>`;
         } else {
-            let html = `<h2 class="text-xl font-semibold mb-2">Results for ${data.pageUrl}</h2>`;
-            html += `<p class="mb-4">Document Title: ${data.documentTitle}</p>`;
-            html += `<h3 class="text-lg font-semibold mb-2">Issues:</h3>`;
+            let html = `
+                <h2 class="text-xl font-semibold mb-2">Results for ${data.pageUrl}</h2>
+                <p class="mb-4">Document Title: ${data.documentTitle}</p>
+                <h3 class="text-lg font-semibold mb-2">Issues:</h3>
+            `;
             
             if (data.issues.length === 0) {
                 html += `<p class="text-green-500">No accessibility issues found!</p>`;
             } else {
+                html += `<ul class="space-y-4">`;
                 data.issues.forEach((issue, index) => {
                     html += `
-                        <div class="bg-gray-50 p-4 rounded-md mb-4">
+                        <li class="bg-gray-50 p-4 rounded-md">
                             <h4 class="font-semibold">${index + 1}. ${issue.type.toUpperCase()}: ${issue.code}</h4>
                             <p class="mt-2">${issue.message}</p>
-                            <pre class="bg-gray-100 p-2 mt-2 overflow-x-auto"><code>${issue.context}</code></pre>
-                        </div>
+                            ${issue.context ? `<pre class="bg-gray-100 p-2 mt-2 overflow-x-auto text-sm"><code>${escapeHtml(issue.context)}</code></pre>` : ''}
+                            ${issue.selector ? `<p class="mt-2 text-sm text-gray-600">Selector: ${issue.selector}</p>` : ''}
+                        </li>
                     `;
                 });
+                html += `</ul>`;
             }
             resultsDiv.innerHTML = html;
         }
@@ -42,3 +46,12 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
         resultsDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}</p>`;
     }
 });
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
