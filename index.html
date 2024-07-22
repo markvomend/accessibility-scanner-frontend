@@ -8,44 +8,126 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <header class="bg-blue-600 text-white p-4">
-        <h1 id="accessibility-scanner" class="text-2xl font-bold">Accessibility Scanner</h1>
+        <h1 class="text-2xl font-bold">Accessibility Scanner</h1>
     </header>
 
     <main class="container mx-auto p-4">
-        <section class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <form id="scan-form" class="flex items-center">
-                <input type="url" id="url" placeholder="Enter URL to scan" required
+        <form id="scanForm" class="mb-6">
+            <div class="flex">
+                <input type="url" id="urlInput" placeholder="Enter URL to scan" required
                        class="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Scan
                 </button>
-            </form>
-        </section>
+            </div>
+        </form>
 
-        <section id="loading" class="hidden text-center">
+        <div id="loading" class="hidden text-center">
             <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
             <p class="mt-4 text-lg">Scanning in progress...</p>
-        </section>
+        </div>
 
-        <section id="results" class="bg-white rounded-lg shadow-md p-6 space-y-4 hidden">
-            <div id="result-header">
-                <h2 id="report-title" class="text-xl font-semibold mb-2"></h2>
-                <p id="generated-at" class="text-sm text-gray-600 mb-4"></p>
-                <div id="result-toggles" class="flex space-x-2 mb-4">
-                    <button class="bg-blue-500 text-white px-3 py-1 rounded" data-type="all">All Issues</button>
-                    <button class="bg-red-500 text-white px-3 py-1 rounded" data-type="error">Errors</button>
-                    <button class="bg-yellow-500 text-white px-3 py-1 rounded" data-type="warning">Warnings</button>
-                    <button class="bg-green-500 text-white px-3 py-1 rounded" data-type="notice">Notices</button>
-                </div>
+        <div id="results" class="bg-white rounded-lg shadow-md p-6 space-y-4 hidden">
+            <h2 id="reportTitle" class="text-xl font-semibold"></h2>
+            <p id="generatedAt" class="text-sm text-gray-600"></p>
+            <div id="issueFilters" class="flex space-x-2 mb-4">
+                <button class="bg-blue-500 text-white px-3 py-1 rounded" data-filter="all">All Issues</button>
+                <button class="bg-red-500 text-white px-3 py-1 rounded" data-filter="error">Errors</button>
+                <button class="bg-yellow-500 text-white px-3 py-1 rounded" data-filter="warning">Warnings</button>
+                <button class="bg-green-500 text-white px-3 py-1 rounded" data-filter="notice">Notices</button>
             </div>
-            <ul id="issues-list" class="space-y-4"></ul>
-        </section>
+            <ul id="issuesList" class="space-y-4"></ul>
+        </div>
     </main>
 
-    <footer class="bg-gray-200 text-center p-4 mt-8">
-        <p>&copy; 2024 Accessibility Scanner. All rights reserved.</p>
-    </footer>
+    <script>
+    const BACKEND_URL = 'https://accessibility-scanner-backend.onrender.com';
 
-    <script src="script.js"></script>
+    document.getElementById('scanForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const url = document.getElementById('urlInput').value;
+        const loadingDiv = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+        const issuesList = document.getElementById('issuesList');
+
+        loadingDiv.classList.remove('hidden');
+        resultsDiv.classList.add('hidden');
+        issuesList.innerHTML = '';
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/scan?url=${encodeURIComponent(url)}&t=${Date.now()}`, {
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            displayResults(data);
+        } catch (error) {
+            console.error('Scan error:', error);
+            issuesList.innerHTML = `<li class="text-red-500">An error occurred: ${error.message}. Please try again or contact support if the issue persists.</li>`;
+        } finally {
+            loadingDiv.classList.add('hidden');
+            resultsDiv.classList.remove('hidden');
+        }
+    });
+
+    function displayResults(data) {
+        document.getElementById('reportTitle').textContent = `Accessibility report for ${data.pageUrl}`;
+        document.getElementById('generatedAt').textContent = `Generated at: ${new Date().toLocaleString()}`;
+
+        const issuesList = document.getElementById('issuesList');
+        if (data.issues.length === 0) {
+            issuesList.innerHTML = '<li class="text-green-500">No accessibility issues found!</li>';
+        } else {
+            renderIssues(data.issues);
+            setupFilters(data.issues);
+        }
+    }
+
+    function renderIssues(issues) {
+        const issuesList = document.getElementById('issuesList');
+        issuesList.innerHTML = issues.map((issue, index) => `
+            <li class="bg-gray-50 p-4 rounded-md" data-type="${issue.type}">
+                <h3 class="font-semibold">${index + 1}. ${issue.type.toUpperCase()}: ${issue.code}</h3>
+                <p class="mt-2">${issue.message}</p>
+                ${issue.context ? `<pre class="bg-gray-100 p-2 mt-2 overflow-x-auto text-sm"><code>${escapeHtml(issue.context)}</code></pre>` : ''}
+                ${issue.selector ? `<p class="mt-2 text-sm text-gray-600">Selector: ${issue.selector}</p>` : ''}
+            </li>
+        `).join('');
+    }
+
+    function setupFilters(issues) {
+        const filters = document.querySelectorAll('#issueFilters button');
+        filters.forEach(filter => {
+            const type = filter.dataset.filter;
+            const count = type === 'all' ? issues.length : issues.filter(i => i.type === type).length;
+            filter.textContent = `${filter.textContent} (${count})`;
+
+            filter.addEventListener('click', () => {
+                filters.forEach(f => f.classList.remove('ring-2', 'ring-offset-2'));
+                filter.classList.add('ring-2', 'ring-offset-2');
+                
+                const items = document.querySelectorAll('#issuesList li');
+                items.forEach(item => {
+                    if (type === 'all' || item.dataset.type === type) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+    </script>
 </body>
 </html>
