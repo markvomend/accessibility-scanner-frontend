@@ -1,14 +1,30 @@
 const BACKEND_URL = 'https://accessibility-scanner-backend.onrender.com';
 
-document.getElementById('scan-form').addEventListener('submit', async (e) => {
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
+    const form = document.getElementById('scan-form');
+    if (form) {
+        console.log('Scan form found, adding event listener');
+        form.addEventListener('submit', handleSubmit);
+    } else {
+        console.error('Scan form not found in the DOM');
+    }
+});
+
+async function handleSubmit(e) {
     e.preventDefault();
+    console.log('Form submitted');
+
     const url = document.getElementById('url').value;
     const resultsDiv = document.getElementById('results');
     const loadingDiv = document.getElementById('loading');
     const resultHeader = document.getElementById('result-header');
     const issuesList = document.getElementById('issues-list');
 
-    console.log('Form submitted');
+    if (!resultsDiv) console.error('results div not found');
+    if (!loadingDiv) console.error('loading div not found');
+    if (!resultHeader) console.error('result header not found');
+    if (!issuesList) console.error('issues list not found');
 
     if (!resultsDiv || !loadingDiv || !resultHeader || !issuesList) {
         console.error('One or more required elements are missing from the DOM');
@@ -77,7 +93,7 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
         loadingDiv.classList.add('hidden');
         issuesList.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please try again or contact support if the issue persists.</p>`;
     }
-});
+}
 
 function renderIssues(issues) {
     console.log('Inside renderIssues function');
@@ -87,7 +103,7 @@ function renderIssues(issues) {
         return;
     }
 
-    issuesList.innerHTML = issues.map((issue, index) => `
+    const issuesHtml = issues.map((issue, index) => `
         <li class="bg-gray-50 p-4 rounded-md mb-4" data-type="${issue.type}">
             <h4 class="font-semibold">${index + 1}. ${issue.type.toUpperCase()}: ${issue.code}</h4>
             <p class="mt-2">${issue.message}</p>
@@ -95,14 +111,19 @@ function renderIssues(issues) {
             ${issue.selector ? `<p class="mt-2 text-sm text-gray-600">Selector: ${issue.selector}</p>` : ''}
         </li>
     `).join('');
-    console.log('Issues rendered');
+    
+    console.log('Issues HTML generated:', issuesHtml);
+    issuesList.innerHTML = issuesHtml;
+    console.log('Issues rendered to DOM');
 }
 
 function setupToggleListeners(issues) {
+    console.log('Setting up toggle listeners');
     const toggles = document.querySelectorAll('#result-toggles button');
     toggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
             const type = toggle.getAttribute('data-type');
+            console.log('Toggle clicked:', type);
             toggles.forEach(t => t.classList.remove('bg-opacity-100'));
             toggle.classList.add('bg-opacity-100');
             
@@ -117,6 +138,7 @@ function setupToggleListeners(issues) {
 }
 
 function updateIssueCounts(issues) {
+    console.log('Updating issue counts');
     const counts = {
         error: issues.filter(i => i.type === 'error').length,
         warning: issues.filter(i => i.type === 'warning').length,
@@ -134,6 +156,7 @@ function updateIssueCounts(issues) {
     
     const totalIssues = counts.error + counts.warning + counts.notice;
     if (allButton) allButton.textContent = `All Issues (${totalIssues})`;
+    console.log('Issue counts updated');
 }
 
 function escapeHtml(unsafe) {
