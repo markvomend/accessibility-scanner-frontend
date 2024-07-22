@@ -18,11 +18,22 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
     resultHeader.classList.add('hidden');
 
     try {
-        const response = await fetch(`${BACKEND_URL}/scan?url=${encodeURIComponent(url)}`);
+        // Ensure the URL is properly encoded and add a cache-busting parameter
+        const encodedUrl = encodeURIComponent(url);
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${BACKEND_URL}/scan?url=${encodedUrl}&t=${timestamp}`, {
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('Received data:', data); // Debugging log
         loadingDiv.classList.add('hidden');
 
         if (data.error) {
