@@ -8,6 +8,8 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
     const resultHeader = document.getElementById('result-header');
     const issuesList = document.getElementById('issues-list');
 
+    console.log('Form submitted');
+
     if (!resultsDiv || !loadingDiv || !resultHeader || !issuesList) {
         console.error('One or more required elements are missing from the DOM');
         return;
@@ -18,9 +20,10 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
     resultHeader.classList.add('hidden');
 
     try {
-        // Ensure the URL is properly encoded and add a cache-busting parameter
         const encodedUrl = encodeURIComponent(url);
         const timestamp = new Date().getTime();
+        console.log('Sending request to:', `${BACKEND_URL}/scan?url=${encodedUrl}&t=${timestamp}`);
+        
         const response = await fetch(`${BACKEND_URL}/scan?url=${encodedUrl}&t=${timestamp}`, {
             headers: {
                 'Cache-Control': 'no-cache',
@@ -33,37 +36,56 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
         }
         
         const data = await response.json();
-        console.log('Received data:', data); // Debugging log
+        console.log('Received data:', data);
         loadingDiv.classList.add('hidden');
 
         if (data.error) {
+            console.log('Error in data:', data.error);
             issuesList.innerHTML = `<p class="text-red-500">${data.error}</p>`;
         } else {
+            console.log('Processing results');
             resultHeader.classList.remove('hidden');
             const reportTitle = document.getElementById('report-title');
             const generatedAt = document.getElementById('generated-at');
             
-            if (reportTitle) reportTitle.textContent = `Accessibility report for ${data.pageUrl}`;
-            if (generatedAt) generatedAt.textContent = `Generated at: ${new Date().toLocaleString()}`;
+            if (reportTitle) {
+                reportTitle.textContent = `Accessibility report for ${data.pageUrl}`;
+                console.log('Report title set');
+            } else {
+                console.error('report-title element not found');
+            }
+            
+            if (generatedAt) {
+                generatedAt.textContent = `Generated at: ${new Date().toLocaleString()}`;
+                console.log('Generated at set');
+            } else {
+                console.error('generated-at element not found');
+            }
             
             if (data.issues.length === 0) {
+                console.log('No issues found');
                 issuesList.innerHTML = `<p class="text-green-500">No accessibility issues found!</p>`;
             } else {
+                console.log('Rendering issues');
                 renderIssues(data.issues);
                 setupToggleListeners(data.issues);
                 updateIssueCounts(data.issues);
             }
         }
     } catch (error) {
+        console.error('Scan error:', error);
         loadingDiv.classList.add('hidden');
         issuesList.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please try again or contact support if the issue persists.</p>`;
-        console.error('Scan error:', error);
     }
 });
 
 function renderIssues(issues) {
+    console.log('Inside renderIssues function');
     const issuesList = document.getElementById('issues-list');
-    if (!issuesList) return;
+    if (!issuesList) {
+        console.error('issues-list element not found');
+        return;
+    }
 
     issuesList.innerHTML = issues.map((issue, index) => `
         <li class="bg-gray-50 p-4 rounded-md mb-4" data-type="${issue.type}">
@@ -73,6 +95,7 @@ function renderIssues(issues) {
             ${issue.selector ? `<p class="mt-2 text-sm text-gray-600">Selector: ${issue.selector}</p>` : ''}
         </li>
     `).join('');
+    console.log('Issues rendered');
 }
 
 function setupToggleListeners(issues) {
