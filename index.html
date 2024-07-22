@@ -45,9 +45,10 @@
                 <h2 id="report-title" class="text-xl font-semibold mb-2"></h2>
                 <p id="generated-at" class="mb-4"></p>
                 <div id="result-toggles" class="mb-4">
-                    <button class="px-3 py-1 bg-red-500 text-white rounded mr-2" data-type="error">Errors</button>
-                    <button class="px-3 py-1 bg-yellow-500 text-white rounded mr-2" data-type="warning">Warnings</button>
-                    <button class="px-3 py-1 bg-blue-500 text-white rounded" data-type="notice">Notices</button>
+                    <button class="px-3 py-1 bg-gray-500 text-white rounded mr-2 bg-opacity-100" data-type="all">All Issues</button>
+                    <button class="px-3 py-1 bg-red-500 text-white rounded mr-2 bg-opacity-50" data-type="error">Errors</button>
+                    <button class="px-3 py-1 bg-yellow-500 text-white rounded mr-2 bg-opacity-50" data-type="warning">Warnings</button>
+                    <button class="px-3 py-1 bg-blue-500 text-white rounded bg-opacity-50" data-type="notice">Notices</button>
                 </div>
             </div>
             <ul id="issues-list" class="space-y-4"></ul>

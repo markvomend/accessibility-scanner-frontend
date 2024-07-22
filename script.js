@@ -8,6 +8,11 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
     const resultHeader = document.getElementById('result-header');
     const issuesList = document.getElementById('issues-list');
 
+    if (!resultsDiv || !loadingDiv || !resultHeader || !issuesList) {
+        console.error('One or more required elements are missing from the DOM');
+        return;
+    }
+
     resultsDiv.innerHTML = '';
     loadingDiv.classList.remove('hidden');
     resultHeader.classList.add('hidden');
@@ -24,8 +29,11 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
             issuesList.innerHTML = `<p class="text-red-500">${data.error}</p>`;
         } else {
             resultHeader.classList.remove('hidden');
-            document.getElementById('report-title').textContent = `Accessibility report for ${data.pageUrl}`;
-            document.getElementById('generated-at').textContent = `Generated at: ${new Date().toLocaleString()}`;
+            const reportTitle = document.getElementById('report-title');
+            const generatedAt = document.getElementById('generated-at');
+            
+            if (reportTitle) reportTitle.textContent = `Accessibility report for ${data.pageUrl}`;
+            if (generatedAt) generatedAt.textContent = `Generated at: ${new Date().toLocaleString()}`;
             
             if (data.issues.length === 0) {
                 issuesList.innerHTML = `<p class="text-green-500">No accessibility issues found!</p>`;
@@ -44,6 +52,8 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
 
 function renderIssues(issues) {
     const issuesList = document.getElementById('issues-list');
+    if (!issuesList) return;
+
     issuesList.innerHTML = issues.map((issue, index) => `
         <li class="bg-gray-50 p-4 rounded-md mb-4" data-type="${issue.type}">
             <h4 class="font-semibold">${index + 1}. ${issue.type.toUpperCase()}: ${issue.code}</h4>
@@ -79,12 +89,17 @@ function updateIssueCounts(issues) {
         notice: issues.filter(i => i.type === 'notice').length
     };
 
-    document.querySelector('[data-type="error"]').textContent = `Errors (${counts.error})`;
-    document.querySelector('[data-type="warning"]').textContent = `Warnings (${counts.warning})`;
-    document.querySelector('[data-type="notice"]').textContent = `Notices (${counts.notice})`;
+    const errorButton = document.querySelector('[data-type="error"]');
+    const warningButton = document.querySelector('[data-type="warning"]');
+    const noticeButton = document.querySelector('[data-type="notice"]');
+    const allButton = document.querySelector('[data-type="all"]');
+
+    if (errorButton) errorButton.textContent = `Errors (${counts.error})`;
+    if (warningButton) warningButton.textContent = `Warnings (${counts.warning})`;
+    if (noticeButton) noticeButton.textContent = `Notices (${counts.notice})`;
     
     const totalIssues = counts.error + counts.warning + counts.notice;
-    document.querySelector('[data-type="all"]').textContent = `All Issues (${totalIssues})`;
+    if (allButton) allButton.textContent = `All Issues (${totalIssues})`;
 }
 
 function escapeHtml(unsafe) {
