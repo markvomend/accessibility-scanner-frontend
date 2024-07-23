@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accessibility Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .progress-bar {
+            background: linear-gradient(
+                to right,
+                #4f46e5,
+                #818cf8,
+                #4f46e5
+            );
+            background-size: 1000px 100%;
+            animation: shimmer 30s infinite linear;
+            transition: width 0.5s ease;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <header class="bg-blue-600 text-white p-4">
@@ -25,11 +42,11 @@
         <div id="loading" class="hidden">
             <div class="mb-4 text-center">
                 <p class="text-lg font-semibold mb-2">Scanning in progress...</p>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                    <div id="progress-bar" class="progress-bar h-full rounded-full" style="width: 0%"></div>
                 </div>
             </div>
-            <div id="progress-steps" class="flex justify-between text-xs text-gray-600">
+            <div id="progress-steps" class="flex justify-between text-xs text-gray-600 mt-2">
                 <span>Initializing</span>
                 <span>Analyzing</span>
                 <span>Finalizing</span>
@@ -228,4 +245,3 @@
     </script>
 </body>
 </html>
-
